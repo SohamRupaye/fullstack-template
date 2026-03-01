@@ -1,0 +1,53 @@
+# PRODUCTION Docker Compose
+
+services:
+  nginx:
+    image: jonasal/nginx-certbot:latest
+    container_name: template-nginx
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - CERTBOT_EMAIL= # REPLACE EMAIL HERE
+      - CERTBOT_DOMAINS= # REPLACE DOMAIN NAME HERE (e.g. template.com)
+      - STAGING=0
+      - CERTBOT_WEBROOT=/var/www/certbot
+    # NOTE: "ports" is omitted because network_mode: host binds directly to the host network.
+    # The container will listen on host ports 80 and 443 automatically.
+    volumes:
+      - nginx_secrets:/etc/letsencrypt
+      # Mount Nginx conf here (proxy to localhost:3000 and 4000)
+      - ./conf.d:/etc/nginx/conf.d
+      - ./webroot:/var/www/certbot
+
+  web:
+    build:
+      context: ../../
+      dockerfile: Docker/production/Dockerfile.prod
+    image: template-monolith:latest
+    container_name: template-web
+    restart: unless-stopped
+    # Serve the static Vite output on port 3000
+    command: ["npx", "serve", "-s", "packages/web/dist", "-l", "3000"]
+    ports:
+      - "3000:3000"
+
+  server:
+    # Reuses the same image built by the "web" service above
+    image: template-monolith:latest
+    container_name: template-server
+    restart: unless-stopped
+    depends_on:
+      - web # ensures the image is built before this service starts
+    env_file:
+      - ../../packages/server/.env.prod
+    # Start the compiled Node server on port 4000
+    command: ["node", "packages/server/dist/index.js"]
+    ports:
+      - "4000:4000"
+    volumes:
+      # Persistent volume for any uploads/local files your server saves
+      - server_files:/app/packages/server/files
+
+volumes:
+  nginx_secrets:
+  server_files:

@@ -1,0 +1,30 @@
+import { z } from "zod";
+import { router, publicProcedure, protectedProcedure } from "../common/trpc";
+
+/**
+ * Auth Router — wire your auth strategy here.
+ *
+ * publicProcedure  → no token required
+ * protectedProcedure → throws UNAUTHORIZED if no valid JWT in Authorization header
+ *
+ * Example: Replace the login mutation body with your real auth logic
+ * (bcrypt compare + signJWT, Clerk session verify, etc.)
+ */
+export const authRouter = router({
+  /** Example public route — replace with real login logic */
+  login: publicProcedure
+    .input(z.object({ email: z.string().email(), password: z.string() }))
+    .mutation(async ({ input: _input }) => {
+      // TODO: implement login
+      // 1. Find user by email
+      // 2. Compare password with bcrypt
+      // 3. Sign JWT: signJWT({ id: user.id, email: user.email, role: user.role })
+      // 4. Return { token, user }
+      throw new Error("Not implemented — add your login logic here");
+    }),
+
+  /** Example protected route — only reachable with a valid JWT */
+  me: protectedProcedure.query(({ ctx }) => {
+    return ctx.user;
+  }),
+});

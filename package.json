@@ -1,0 +1,26 @@
+{
+  "name": "fullstack-template",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "db:seed": "pnpm --filter database seed",
+    "db:generate": "pnpm --filter database generate",
+    "db:push": "pnpm --filter database push",
+    "db:generate:prod": "pnpm --filter database generate:prod",
+    "db:push:prod": "pnpm --filter database push:prod",
+    "web": "pnpm --filter web dev",
+    "server:local": "pnpm --filter server dev",
+    "server": "pnpm --filter server start",
+    "build": "pnpm -r run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r exec tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.27.0",
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}

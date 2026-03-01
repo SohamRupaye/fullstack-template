@@ -1,0 +1,15 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+packages/server/dist
+packages/web/dist
+packages/prisma/dist
+
+# Lock files
+pnpm-lock.yaml
+
+# Auto-generated
+packages/prisma/prisma/*.db
+*.tsbuildinfo

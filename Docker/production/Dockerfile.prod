@@ -1,0 +1,57 @@
+# ---------- BASE ----------
+FROM node:22-alpine AS base
+# Enable corepack for pnpm
+RUN corepack enable pnpm
+
+# Prisma + build deps
+RUN apk add --no-cache libc6-compat curl openssl bash python3 make g++ musl-dev
+
+# Install Dotenvx, We will use dotenvx to differentiate between diff environments
+RUN curl -fsS https://dotenvx.sh | sh
+
+# ---------- BUILDER ----------
+FROM base AS builder
+WORKDIR /app
+
+# Accept build environment arguments
+ARG NODE_ENV=development
+ENV NODE_ENV=$NODE_ENV
+
+# Copy source code first
+COPY . .
+
+# Clean install to avoid mismatched native binaries
+RUN rm -rf node_modules
+RUN pnpm install
+
+# Generate Prisma Client (Linux musl specifically for Alpine)
+ENV PRISMA_CLI_BINARY_TARGETS="linux-musl"
+RUN pnpm db:generate
+
+# Build the server and web applications
+RUN pnpm build
+
+# ---------- RUNTIME ----------
+FROM base AS runner
+WORKDIR /app
+
+# Accept runtime environment arguments
+ARG NODE_ENV=production
+ENV NODE_ENV=$NODE_ENV
+
+# Copy root workspace config (needed for workspace: protocol resolution)
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Copy node_modules and built packages from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+
+# Install PM2 for process management
+RUN pnpm install -g pm2
+# Add serve for hosting the static web files in production
+RUN pnpm install -g serve
+
+# We don't define a CMD here. We will use docker-compose to override the command
+# per container (one for server, one for web).

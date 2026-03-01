@@ -1,0 +1,23 @@
+{
+  "name": "database",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "seed": "ts-node prisma/seed.ts",
+    "generate": "prisma generate",
+    "push": "prisma db push",
+    "generate:prod": "echo 'Setup your SSH tunnel here before generating!' && prisma generate",
+    "push:prod": "echo 'Setup your SSH tunnel here before pushing!' && prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.2"
+  },
+  "devDependencies": {
+    "prisma": "^5.10.2",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.11.20"
+  }
+}

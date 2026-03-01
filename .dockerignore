@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+
+# Git
+.git
+.gitignore
+
+# Docker (avoid recursive context)
+Docker
+
+# IDE / OS
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Env files (injected via docker-compose env_file, not baked into image)
+**/.env
+**/.env.*
+!**/.env.example

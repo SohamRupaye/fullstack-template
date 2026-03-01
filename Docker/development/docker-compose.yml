@@ -1,0 +1,35 @@
+# DEVELOPMENT Docker Compose — just Postgres for local dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: template-postgres
+    ports:
+      # Map port 5433 to avoid conflict with local PostgreSQL
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  prisma:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ../../:/app
+    command: >
+      sh -c "
+        npm i -g pnpm &&
+        pnpm --filter database db:generate &&
+        pnpm --filter database db:push
+      "
+    environment:
+      # INSIDE the docker network, postgres is on 5432 (5433 is only mapped to localhost host)
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

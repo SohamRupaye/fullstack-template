@@ -1,0 +1,45 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "npx @dotenvx/dotenvx run -f .env.dev --verbose -- ts-node-dev -r tsconfig-paths/register --project tsconfig.json --respawn --transpile-only src/index.ts",
+    "start": "npx @dotenvx/dotenvx run -f .env.prod --verbose -- node dist/index.js",
+    "test": "ts-node-dev -r tsconfig-paths/register --project tsconfig.json --respawn --transpile-only test/index.ts",
+    "lint": "eslint . --ext .ts",
+    "traceResolution": "tsc --traceResolution"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@trpc/server": "^10.45.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "database": "workspace:*",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.3",
+    "jsonwebtoken": "^9.0.3",
+    "superjson": "^2.2.6",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@dotenvx/dotenvx": "^1.14.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.25",
+    "@types/jsonwebtoken": "^9.0.10",
+    "eslint": "^9.39.3",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.56.1"
+  }
+}
