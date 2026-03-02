@@ -28,6 +28,9 @@ const apiLimiter = rateLimit({
 // Apply the rate limiting middleware to API calls only
 app.use("/api", apiLimiter, portalRouter);
 
+// Static file serving via express
+// app.use("/files", express.static(path.resolve(`${__dirname}/${process.env.BASE_FILE_UPLOAD_PATH_EXPRESS}`)));
+
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

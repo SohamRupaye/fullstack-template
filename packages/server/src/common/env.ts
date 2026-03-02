@@ -5,11 +5,14 @@ import { z } from "zod";
  * the application will crash with a detailed error.
  */
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.string().regex(/^\d+$/).transform(Number).default("4000"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection URL"),
   RSA_PRIVATE_KEY: z.string().optional(),
   RSA_PUBLIC_KEY: z.string().optional(),
+  BASE_FILE_UPLOAD_PATH_EXPRESS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

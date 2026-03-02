@@ -11,22 +11,17 @@ const loggingTRPCMiddleware = async ({
   type: string;
   next: () => Promise<any>;
 }) => {
-  // First log to the logs.jsonl file,
-  // Then try to execute the trpc query. If it passes, do nothing,
-  // if it fails, log the error to the errors.jsonl file
-  // check if its a prisma error, if it is, then throw the appropriate error message
-  // else throw a generic error
-
   const result = await next();
 
   if (result.ok) {
     logToFile({ path, type });
   } else {
     const { error } = result;
-    console.log("MIDDLEWARE CAUGHT ERROR" + error);
 
+    // Log the actual error to the file
     logErrorToFile({ error, path, type });
 
+    // 1. Handle Prisma constraint/validation errors
     const { errorCode, message } = getPrismaError(error.cause);
 
     if (errorCode) {
@@ -37,14 +32,15 @@ const loggingTRPCMiddleware = async ({
       });
     }
 
-    // Do NOT mask TRPCError instances with INTERNAL_SERVER_ERROR
+    // 2. Do NOT mask TRPCError instances with INTERNAL_SERVER_ERROR
     if (error instanceof TRPCError || error.name === "TRPCError") {
       throw error;
     }
 
+    // 3. Everything else becomes a generic 500
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: error.message,
+      message: "Internal server error occurred",
       cause: error.cause,
     });
   }
