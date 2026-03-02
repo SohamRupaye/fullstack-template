@@ -1,47 +1,31 @@
 import { initTRPC, inferAsyncReturnType, TRPCError } from "@trpc/server";
 import loggingTRPCMiddleware from "./middleware/logging.trpc.middleware";
-import { verifyJWT } from "../utils/jwt.util";
+import { authStrategy } from "./auth";
 import { transformer } from "shared/transformer";
 import { UserRole } from "database";
 import { RUNTIME_VARIABLES } from "./runtime-variable";
 
 // ---------------------------------------------------------------------------
-// AUTH STRATEGY — pick one and implement accordingly
+// AUTH STRATEGY CONFIGURATION
 // ---------------------------------------------------------------------------
-// STRATEGY 1: Self-contained JWT (RSA key pair)
-//   - Generate an RSA key pair, store as RSA_PAIR env var (see .env.dev)
-//   - signJWT() / verifyJWT() in jwt.util.ts handle everything
-//   - The context below verifies the Bearer token from Authorization header
-//
-// STRATEGY 2: Shared RSA microservice
-//   - Your auth microservice signs JWTs with its private key
-//   - Store ONLY the public key in this server's RSA_PAIR env var
-//   - verifyJWT() already supports this — no code change needed
-//
-// STRATEGY 3: Clerk / NextAuth / third-party
-//   - Replace the `if (token)` block below with your provider's verify call
-//   - e.g. for Clerk: const payload = await clerkClient.verifyToken(token)
-//   - Remove RSA_PAIR from .env.dev entirely
+// Check `src/common/auth/index.ts` to switch between Local JWTs, Clerk,
+// or other external providers cleanly.
 // ---------------------------------------------------------------------------
 
-export const createContext = (opts?: any) => {
+export const createContext = async (opts?: any) => {
   const token = opts?.req?.headers?.authorization?.split(" ")[1] ?? null;
   const adminSecret = opts?.req?.headers?.["x-admin-secret-key"] ?? null;
 
-  let user: { id: string; role: UserRole; username: string } | null = null;
+  let user: { id: string; role: UserRole; username?: string } | null = null;
 
-  if (token && RUNTIME_VARIABLES.RSA_PAIR) {
+  if (token) {
     try {
-      const decoded = verifyJWT(token);
-      if (decoded && decoded.id) {
-        user = {
-          id: decoded.id,
-          username: decoded.email,
-          role: decoded.role as UserRole,
-        };
+      const authUser = await authStrategy.verifyToken(token);
+      if (authUser) {
+        user = authUser;
       }
     } catch (error) {
-      console.log("createContext: Invalid token", error);
+      console.log("createContext: Token Verification Failed", error);
     }
   }
 
