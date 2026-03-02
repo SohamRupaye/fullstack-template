@@ -12,10 +12,10 @@
     "push:prod": "echo 'Setup your SSH tunnel here before pushing!' && prisma db push"
   },
   "dependencies": {
-    "@prisma/client": "^5.10.2"
+    "@prisma/client": "^6.18.0"
   },
   "devDependencies": {
-    "prisma": "^5.10.2",
+    "prisma": "^6.18.0",
     "typescript": "^5.3.3",
     "ts-node": "^10.9.2",
     "@types/node": "^20.11.20"
