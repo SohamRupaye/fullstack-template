@@ -1,0 +1,116 @@
+pipeline {
+    agent any
+
+    environment {
+        // Node 20 is expected to be available.
+        // If your Jenkins uses the NodeJS plugin, use:
+        // tools { nodejs 'node-20' }
+        // For pnpm, we rely on corepack which is bundled with Node.js.
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Determine Changes') {
+            steps {
+                script {
+                    env.CHANGED_WEB = 'false'
+                    env.CHANGED_SERVER = 'false'
+                    env.CHANGED_DATABASE = 'false'
+                    env.CHANGED_SHARED = 'false'
+                    env.CHANGED_ROOT = 'false'
+
+                    // Simple heuristic to detect files changed in the latest commit
+                    // Depending on branching strategy, this might need adjusting (e.g. against origin/main)
+                    def diffStatus = sh(script: "git diff --name-only HEAD~1 HEAD || true", returnStdout: true).trim()
+
+                    if (diffStatus) {
+                        def changedFiles = diffStatus.split('\n')
+                        for (file in changedFiles) {
+                            if (file.startsWith('packages/web/')) env.CHANGED_WEB = 'true'
+                            if (file.startsWith('packages/server/')) env.CHANGED_SERVER = 'true'
+                            if (file.startsWith('packages/prisma/')) env.CHANGED_DATABASE = 'true'
+                            if (file.startsWith('packages/shared/')) env.CHANGED_SHARED = 'true'
+                            if (file == 'package.json' || file == 'pnpm-workspace.yaml' || file == 'pnpm-lock.yaml') env.CHANGED_ROOT = 'true'
+                        }
+                    } else {
+                        // fallback to building everything if diff fails
+                        env.CHANGED_WEB = 'true'
+                        env.CHANGED_SERVER = 'true'
+                        env.CHANGED_DATABASE = 'true'
+                        env.CHANGED_SHARED = 'true'
+                        env.CHANGED_ROOT = 'true'
+                    }
+
+                    echo "Changes detected:"
+                    echo "- Web: ${env.CHANGED_WEB}"
+                    echo "- Server: ${env.CHANGED_SERVER}"
+                    echo "- Database: ${env.CHANGED_DATABASE}"
+                    echo "- Shared: ${env.CHANGED_SHARED}"
+                    echo "- Root: ${env.CHANGED_ROOT}"
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                // Ensure corepack is enabled so `pnpm` can be used
+                sh 'corepack enable'
+                sh 'pnpm install --frozen-lockfile'
+
+                // Generate Prisma client so typechecking and subsequent builds succeed
+                sh 'pnpm --filter database generate'
+            }
+        }
+
+        stage('Quality Checks') {
+            parallel {
+                stage('Format Check') {
+                    steps {
+                        sh 'pnpm format:check'
+                    }
+                }
+                stage('Typecheck') {
+                    steps {
+                        sh 'pnpm typecheck'
+                    }
+                }
+            }
+        }
+
+        stage('Conditional Builds') {
+            parallel {
+                stage('Build Web') {
+                    when {
+                        anyOf {
+                            environment name: 'CHANGED_WEB', value: 'true'
+                            environment name: 'CHANGED_SHARED', value: 'true'
+                            environment name: 'CHANGED_ROOT', value: 'true'
+                        }
+                    }
+                    steps {
+                        sh 'pnpm --filter web build'
+                    }
+                }
+
+                stage('Build Server') {
+                    when {
+                        anyOf {
+                            environment name: 'CHANGED_SERVER', value: 'true'
+                            environment name: 'CHANGED_SHARED', value: 'true'
+                            environment name: 'CHANGED_DATABASE', value: 'true'
+                            environment name: 'CHANGED_ROOT', value: 'true'
+                        }
+                    }
+                    steps {
+                        sh 'pnpm --filter server build'
+                    }
+                }
+            }
+        }
+    }
+}
