@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../common/trpc";
+import { prisma } from "../db";
 
 /**
  * Auth Router — wire your auth strategy here.
@@ -27,4 +28,17 @@ export const authRouter = router({
   me: protectedProcedure.query(({ ctx }) => {
     return ctx.user;
   }),
+
+  // Example
+  getUser: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .query(async ({ input: { email } }) => {
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (!user) {
+        throw new Error("User not found");
+      }
+      return { name: user.name, role: user.role };
+    }),
 });
