@@ -14,7 +14,16 @@ import { prisma } from "../db";
 export const authRouter = router({
   /** Example public route — replace with real login logic */
   login: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/auth/login",
+        tags: ["auth"],
+        summary: "Login user",
+      },
+    })
     .input(z.object({ email: z.string().email(), password: z.string() }))
+    .output(z.any())
     .mutation(async ({ input: _input }) => {
       // TODO: implement login
       // 1. Find user by email
@@ -25,13 +34,34 @@ export const authRouter = router({
     }),
 
   /** Example protected route — only reachable with a valid JWT */
-  me: protectedProcedure.query(({ ctx }) => {
-    return ctx.user;
-  }),
+  me: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/auth/me",
+        tags: ["auth"],
+        summary: "Get current user",
+        protect: true,
+      },
+    })
+    .input(z.void())
+    .output(z.any())
+    .query(({ ctx }) => {
+      return ctx.user;
+    }),
 
   // Example
   getUser: publicProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/auth/user",
+        tags: ["auth"],
+        summary: "Get user by email",
+      },
+    })
     .input(z.object({ email: z.string().email() }))
+    .output(z.any())
     .query(async ({ input: { email } }) => {
       const user = await prisma.user.findUnique({
         where: { email },

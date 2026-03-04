@@ -1,4 +1,5 @@
 import { initTRPC, inferAsyncReturnType, TRPCError } from "@trpc/server";
+import { OpenApiMeta } from "trpc-openapi";
 import loggingTRPCMiddleware from "./middleware/logging.trpc.middleware";
 import { authStrategy } from "./auth";
 import { transformer } from "shared/transformer";
@@ -34,16 +35,19 @@ export const createContext = async (opts?: any) => {
 
 export type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC.context<Context>().create({
-  transformer,
-  errorFormatter({ shape }) {
-    if (process.env.NODE_ENV === "production" && shape.data) {
-      const { stack, ...safeData } = shape.data;
-      return { ...shape, data: safeData };
-    }
-    return shape;
-  },
-});
+const t = initTRPC
+  .context<Context>()
+  .meta<OpenApiMeta>()
+  .create({
+    transformer,
+    errorFormatter({ shape }) {
+      if (process.env.NODE_ENV === "production" && shape.data) {
+        const { stack, ...safeData } = shape.data;
+        return { ...shape, data: safeData };
+      }
+      return shape;
+    },
+  });
 
 // Middleware: require authenticated user
 const isAuthed = t.middleware(({ ctx, next }) => {
