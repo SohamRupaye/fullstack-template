@@ -47,7 +47,7 @@ class BufferedLogger {
       type,
     };
 
-    this.logBuffer.push(JSON.stringify(logEntry) + "\\n");
+    this.logBuffer.push(JSON.stringify(logEntry) + "\n");
 
     // Flush immediately if buffer reaches its maximum allowed size
     if (this.logBuffer.length >= this.maxBufferSize) {
@@ -78,7 +78,7 @@ class BufferedLogger {
       additionalMetadata,
     };
 
-    this.errorBuffer.push(JSON.stringify(errorEntry) + "\\n");
+    this.errorBuffer.push(JSON.stringify(errorEntry) + "\n");
 
     // Flush immediately if buffer reaches its maximum allowed size
     if (this.errorBuffer.length >= this.maxBufferSize) {
